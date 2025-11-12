@@ -78,14 +78,21 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       formData.append('audio', file);
 
       // Call backend API
-      const backendUrl = 'https://xera-id5o.onrender.com';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://xera-id5o.onrender.com';
       console.log('Sending audio to backend:', backendUrl);
       console.log('File details:', { name: file.name, size: file.size, type: file.type });
+
+      // Add timeout to fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
 
       const response = await fetch(`${backendUrl}/api/transcribe`, {
         method: 'POST',
         body: formData,
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       console.log('Backend response status:', response.status);
 
@@ -105,7 +112,18 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       onTranscriptionComplete?.(transcriptionText);
     } catch (error) {
       console.error("Transcription error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Failed to transcribe audio. Please try again.";
+      let errorMsg = "Failed to transcribe audio. Please try again.";
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMsg = "Request timed out. The backend server might be sleeping (free tier). Please try again in 30-60 seconds.";
+        } else if (error.message.includes('fetch')) {
+          errorMsg = "Cannot connect to backend server. Please check if the backend is running.";
+        } else {
+          errorMsg = error.message;
+        }
+      }
+
       onError?.(errorMsg);
       alert(errorMsg);
     } finally {
@@ -119,8 +137,11 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
     setIsSummarizing(true);
 
     try {
-      const backendUrl = 'https://xera-id5o.onrender.com';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://xera-id5o.onrender.com';
       console.log('Requesting summary from backend:', backendUrl);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch(`${backendUrl}/api/summarize`, {
         method: 'POST',
@@ -128,7 +149,10 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text: transcription }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       console.log('Summary response status:', response.status);
 
@@ -147,7 +171,18 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       setSummary(summaryText);
     } catch (error) {
       console.error("Summarization error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Failed to generate summary. Please try again.";
+      let errorMsg = "Failed to generate summary. Please try again.";
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMsg = "Request timed out. The backend server might be sleeping (free tier). Please try again in 30-60 seconds.";
+        } else if (error.message.includes('fetch')) {
+          errorMsg = "Cannot connect to backend server. Please check if the backend is running.";
+        } else {
+          errorMsg = error.message;
+        }
+      }
+
       onError?.(errorMsg);
       alert(errorMsg);
     } finally {
@@ -161,8 +196,11 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
     setIsGeneratingArticle(true);
 
     try {
-      const backendUrl = 'https://xera-id5o.onrender.com';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'https://xera-id5o.onrender.com';
       console.log('Requesting SEO article from backend:', backendUrl);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const response = await fetch(`${backendUrl}/api/generate-article`, {
         method: 'POST',
@@ -170,7 +208,10 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ text: transcription }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       console.log('Article response status:', response.status);
 
@@ -189,7 +230,18 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       setArticle(articleText);
     } catch (error) {
       console.error("Article generation error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Failed to generate article. Please try again.";
+      let errorMsg = "Failed to generate article. Please try again.";
+
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMsg = "Request timed out. The backend server might be sleeping (free tier). Please try again in 30-60 seconds.";
+        } else if (error.message.includes('fetch')) {
+          errorMsg = "Cannot connect to backend server. Please check if the backend is running.";
+        } else {
+          errorMsg = error.message;
+        }
+      }
+
       onError?.(errorMsg);
       alert(errorMsg);
     } finally {
