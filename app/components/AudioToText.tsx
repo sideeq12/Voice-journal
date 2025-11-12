@@ -78,7 +78,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       formData.append('audio', file);
 
       // Call backend API
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
       console.log('Sending audio to backend:', backendUrl);
       console.log('File details:', { name: file.name, size: file.size, type: file.type });
 
@@ -119,7 +119,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
     setIsSummarizing(true);
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
       console.log('Requesting summary from backend:', backendUrl);
 
       const response = await fetch(`${backendUrl}/api/summarize`, {
@@ -161,7 +161,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
     setIsGeneratingArticle(true);
 
     try {
-      const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+      const backendUrl = import.meta.env.VITE_BACKEND_URL;
       console.log('Requesting SEO article from backend:', backendUrl);
 
       const response = await fetch(`${backendUrl}/api/generate-article`, {
