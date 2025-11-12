@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(npm run typecheck:*)",
+      "Read(//c/Users/Fiverr Account/Documents/hackathon/**)",
+      "Bash(npm install:*)",
+      "Bash(taskkill:*)",
+      "Bash(node index.js:*)",
+      "Bash(node -e:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
