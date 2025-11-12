@@ -80,9 +80,7 @@ export default function Start() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
           <div className="text-center">
             <div className="flex items-center justify-center space-x-3 mb-2">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl sm:text-2xl">V</span>
-              </div>
+        
               <h1 className="text-xl sm:text-2xl font-bold text-white">Voixera</h1>
             </div>
           </div>
@@ -90,7 +88,7 @@ export default function Start() {
       </header>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <div className="mx-auto px-4   sm:px-6 py-8 sm:py-12">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 px-4">
             Start Your Journal Entry
@@ -101,7 +99,9 @@ export default function Start() {
         </div>
 
         {/* Upload Section with AI Transcription */}
-        <div className="mb-8">
+        <div className="w-5/6 mx-auto ">
+          <div className="grid  w-full md:grid-cols-2 space-x-3">
+  <div className="mb-8">
           <AudioToText
             ref={audioToTextRef}
             onTranscriptionComplete={handleTranscriptionComplete}
@@ -110,19 +110,10 @@ export default function Start() {
         </div>
 
         {/* Divider */}
-        <div className="relative mb-8">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-800"></div>
-          </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-black text-gray-400 font-medium">
-              OR
-            </span>
-          </div>
-        </div>
-
-        {/* Record Section */}
-        <div className="bg-gray-900 rounded-2xl shadow-xl border border-gray-800 p-6 sm:p-8">
+        <div className="relative mb-8 h-full">
+          
+         <div className="bg-gray-900 rounded-2xl shadow-xl border
+          border-gray-800 p-6 sm:p-8">
           <div className="text-center">
             <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">
               Record Live
@@ -207,9 +198,16 @@ export default function Start() {
             )}
           </div>
         </div>
+        </div>
+          </div>
+        </div>
+      
+
+    
+       
 
         {/* Features Info */}
-        <div className="mt-8 sm:mt-12 grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="mt-8 sm:mt-12 grid sm:grid-cols-2 md:grid-cols-3 w-5/6 mx-auto gap-4 sm:gap-6">
           <div className="bg-gray-900 rounded-xl p-5 sm:p-6 shadow-md border border-gray-800">
             <div className="w-12 h-12 bg-green-900/30 rounded-lg flex items-center justify-center mb-4 border border-green-700/50">
               <svg
