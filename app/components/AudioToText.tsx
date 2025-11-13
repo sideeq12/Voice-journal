@@ -23,6 +23,9 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
   const [isGeneratingArticle, setIsGeneratingArticle] = useState(false);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showTranscriptionModal, setShowTranscriptionModal] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showArticleModal, setShowArticleModal] = useState(false);
 
   // Expose method to set file from recording
   useImperativeHandle(ref, () => ({
@@ -109,6 +112,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
 
       const transcriptionText = data.transcription || "No transcription available";
       setTranscription(transcriptionText);
+      setShowTranscriptionModal(true);
       onTranscriptionComplete?.(transcriptionText);
     } catch (error) {
       console.error("Transcription error:", error);
@@ -157,8 +161,14 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       console.log('Summary response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || errorData.message || 'Summarization failed');
+        const errorText = await response.text();
+        console.error('Summary error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || 'Summarization failed');
+        } catch {
+          throw new Error(`Summarization failed: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
@@ -169,6 +179,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
 
       const summaryText = data.summary || "No summary available";
       setSummary(summaryText);
+      setShowSummaryModal(true);
     } catch (error) {
       console.error("Summarization error:", error);
       let errorMsg = "Failed to generate summary. Please try again.";
@@ -216,8 +227,14 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
       console.log('Article response status:', response.status);
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || errorData.message || 'Article generation failed');
+        const errorText = await response.text();
+        console.error('Article error response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          throw new Error(errorData.error || errorData.message || 'Article generation failed');
+        } catch {
+          throw new Error(`Article generation failed: ${response.status} - ${errorText}`);
+        }
       }
 
       const data = await response.json();
@@ -228,6 +245,7 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
 
       const articleText = data.article || "No article available";
       setArticle(articleText);
+      setShowArticleModal(true);
     } catch (error) {
       console.error("Article generation error:", error);
       let errorMsg = "Failed to generate article. Please try again.";
@@ -406,131 +424,119 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
             )}
           </div>
 
-          {/* Transcription Result */}
+          {/* Action Buttons */}
           {transcription && (
             <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-800 p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-                <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center">
-                  <svg
-                    className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 mr-2 shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Transcription Complete
-                </h3>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(transcription);
-                    alert("Copied to clipboard!");
-                  }}
-                  className="text-green-400 hover:text-green-300 text-xs sm:text-sm font-medium flex items-center self-start sm:self-auto"
+              <h3 className="text-lg sm:text-xl font-semibold text-white mb-4 flex items-center">
+                <svg
+                  className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 mr-2 shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
                 >
-                  <svg
-                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Processing Complete
+              </h3>
+
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={() => setShowTranscriptionModal(true)}
+                  className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium border border-green-700 flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />
                   </svg>
-                  Copy
+                  View Transcription
                 </button>
-              </div>
-              <div className="bg-gray-950 rounded-lg p-3 sm:p-4 border border-gray-800">
-                <p className="text-sm sm:text-base text-gray-200 whitespace-pre-wrap">
-                  {transcription}
-                </p>
-              </div>
-              <div className="mt-4 flex flex-col gap-3">
+
                 <div className="flex flex-col sm:flex-row gap-3">
-                  {!summary && (
-                    <button
-                      onClick={handleSummarize}
-                      disabled={isSummarizing}
-                      className={`flex-1 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-                        isSummarizing
-                          ? "bg-gray-700 cursor-not-allowed text-gray-400"
-                          : "bg-green-600 text-white hover:bg-green-700 border border-green-700"
-                      }`}
-                    >
-                      {isSummarizing ? (
-                        <span className="flex items-center justify-center">
-                          <svg
-                            className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Generating Summary...
-                        </span>
-                      ) : (
-                        "Get Summary"
-                      )}
-                    </button>
-                  )}
-                  {!article && (
-                    <button
-                      onClick={handleGenerateArticle}
-                      disabled={isGeneratingArticle}
-                      className={`flex-1 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
-                        isGeneratingArticle
-                          ? "bg-gray-700 cursor-not-allowed text-gray-400"
-                          : "bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700"
-                      }`}
-                    >
-                      {isGeneratingArticle ? (
-                        <span className="flex items-center justify-center">
-                          <svg
-                            className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 text-white"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          Generating Article...
-                        </span>
-                      ) : (
-                        "Generate SEO Article"
-                      )}
-                    </button>
-                  )}
+                  <button
+                    onClick={summary ? () => setShowSummaryModal(true) : handleSummarize}
+                    disabled={isSummarizing}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+                      isSummarizing
+                        ? "bg-gray-700 cursor-not-allowed text-gray-400"
+                        : summary
+                        ? "bg-blue-600 text-white hover:bg-blue-700 border border-blue-700"
+                        : "bg-green-600 text-white hover:bg-green-700 border border-green-700"
+                    }`}
+                  >
+                    {isSummarizing ? (
+                      <span className="flex items-center justify-center">
+                        <svg
+                          className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Generating Summary...
+                      </span>
+                    ) : summary ? (
+                      "View Summary"
+                    ) : (
+                      "Get Summary"
+                    )}
+                  </button>
+
+                  <button
+                    onClick={article ? () => setShowArticleModal(true) : handleGenerateArticle}
+                    disabled={isGeneratingArticle}
+                    className={`flex-1 px-4 py-2 rounded-lg text-sm sm:text-base font-medium transition-colors ${
+                      isGeneratingArticle
+                        ? "bg-gray-700 cursor-not-allowed text-gray-400"
+                        : article
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                        : "bg-gradient-to-r from-orange-600 to-red-600 text-white hover:from-orange-700 hover:to-red-700"
+                    }`}
+                  >
+                    {isGeneratingArticle ? (
+                      <span className="flex items-center justify-center">
+                        <svg
+                          className="animate-spin h-3 w-3 sm:h-4 sm:w-4 mr-2 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Generating Article...
+                      </span>
+                    ) : article ? (
+                      "View Article"
+                    ) : (
+                      "Generate SEO Article"
+                    )}
+                  </button>
                 </div>
+
                 <button
                   onClick={handleReset}
                   className="w-full px-4 py-2 text-sm sm:text-base bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition-colors font-medium border border-gray-600"
@@ -541,103 +547,132 @@ export const AudioToText = forwardRef<AudioToTextRef, AudioToTextProps>(({
             </div>
           )}
 
-          {/* Summary Result */}
-          {summary && (
-            <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-800 p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-                <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center">
-                  <svg
-                    className="w-5 h-5 sm:w-6 sm:h-6 text-green-400 mr-2 shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clipRule="evenodd"
-                    />
+        </div>
+      )}
+
+      {/* Transcription Modal */}
+      {showTranscriptionModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowTranscriptionModal(false)}>
+          <div className="bg-gray-900 rounded-xl shadow-2xl border border-gray-800 max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-800">
+              <h3 className="text-xl sm:text-2xl font-semibold text-white flex items-center">
+                <svg className="w-6 h-6 text-green-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                Transcription
+              </h3>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(transcription);
+                    alert("Copied to clipboard!");
+                  }}
+                  className="text-green-400 hover:text-green-300 px-3 py-1 text-sm font-medium flex items-center border border-green-700 rounded-lg hover:bg-green-900/30 transition-colors"
+                >
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
-                  AI Summary
-                </h3>
+                  Copy
+                </button>
+                <button onClick={() => setShowTranscriptionModal(false)} className="text-gray-400 hover:text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="bg-gray-950 rounded-lg p-4 border border-gray-800">
+                <p className="text-base text-gray-200 whitespace-pre-wrap leading-relaxed">
+                  {transcription}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Modal */}
+      {showSummaryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowSummaryModal(false)}>
+          <div className="bg-gray-900 rounded-xl shadow-2xl border border-gray-800 max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-800">
+              <h3 className="text-xl sm:text-2xl font-semibold text-white flex items-center">
+                <svg className="w-6 h-6 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+                AI Summary
+              </h3>
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(summary);
                     alert("Summary copied to clipboard!");
                   }}
-                  className="text-green-400 hover:text-green-300 text-xs sm:text-sm font-medium flex items-center self-start sm:self-auto"
+                  className="text-blue-400 hover:text-blue-300 px-3 py-1 text-sm font-medium flex items-center border border-blue-700 rounded-lg hover:bg-blue-900/30 transition-colors"
                 >
-                  <svg
-                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   Copy
                 </button>
+                <button onClick={() => setShowSummaryModal(false)} className="text-gray-400 hover:text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="bg-green-900/20 rounded-lg p-3 sm:p-4 border-l-4 border-green-500">
-                <p className="text-sm sm:text-base text-gray-200 whitespace-pre-wrap">
+            </div>
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="bg-blue-900/20 rounded-lg p-4 border-l-4 border-blue-500">
+                <p className="text-base text-gray-200 whitespace-pre-wrap leading-relaxed">
                   {summary}
                 </p>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+      )}
 
-          {/* SEO Article Result */}
-          {article && (
-            <div className="bg-gray-900 rounded-xl shadow-lg border border-gray-800 p-4 sm:p-6">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-                <h3 className="text-lg sm:text-xl font-semibold text-white flex items-center">
-                  <svg
-                    className="w-5 h-5 sm:w-6 sm:h-6 text-orange-400 mr-2 shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  SEO-Optimized Article
-                </h3>
+      {/* Article Modal */}
+      {showArticleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setShowArticleModal(false)}>
+          <div className="bg-gray-900 rounded-xl shadow-2xl border border-gray-800 max-w-4xl w-full max-h-[90vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-800">
+              <h3 className="text-xl sm:text-2xl font-semibold text-white flex items-center">
+                <svg className="w-6 h-6 text-orange-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                </svg>
+                SEO-Optimized Article
+              </h3>
+              <div className="flex gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(article);
                     alert("Article copied to clipboard!");
                   }}
-                  className="text-orange-400 hover:text-orange-300 text-xs sm:text-sm font-medium flex items-center self-start sm:self-auto"
+                  className="text-orange-400 hover:text-orange-300 px-3 py-1 text-sm font-medium flex items-center border border-orange-700 rounded-lg hover:bg-orange-900/30 transition-colors"
                 >
-                  <svg
-                    className="w-3 h-3 sm:w-4 sm:h-4 mr-1 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                    />
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                   </svg>
                   Copy
                 </button>
+                <button onClick={() => setShowArticleModal(false)} className="text-gray-400 hover:text-white">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
-              <div className="bg-orange-900/20 rounded-lg p-4 sm:p-6 border-l-4 border-orange-500 prose prose-sm sm:prose max-w-none prose-invert">
-                <div className="text-sm sm:text-base text-gray-200 whitespace-pre-wrap">
+            </div>
+            <div className="p-4 sm:p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="bg-orange-900/20 rounded-lg p-4 border-l-4 border-orange-500 prose prose-sm sm:prose max-w-none prose-invert">
+                <div className="text-base text-gray-200 whitespace-pre-wrap leading-relaxed">
                   {article}
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
